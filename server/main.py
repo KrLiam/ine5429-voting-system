@@ -60,7 +60,7 @@ class Server:
         self.public_key = pk
         self.private_key = sk
         self.start_time = time.time()
-        self.duration = 60 # 1 hora
+        self.duration = 60*10 # 1 hora
         self.candidates = candidates
 
         self.bb = BulletinBoard()
@@ -129,7 +129,7 @@ class Server:
             id = self.validate_id(id)
             if id is None:
                 return jsonify({
-                    "status": "error",
+                    "ok": False,
                     "message": "Este id é inválido."
                 })
 
@@ -140,7 +140,7 @@ class Server:
             self.bb.insert_vote(vote)
 
             return jsonify({
-                "status": "ok",
+                "ok": True,
                 "message": "Voto registrado."
             })
 
@@ -165,7 +165,7 @@ class Server:
 
 if __name__ == "__main__":
     server = Server(candidates=[
-        "Bolsonaro",
-        "Lula"
+        "Jean",
+        "Thais"
     ])
     server.run()

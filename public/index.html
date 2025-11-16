@@ -26,14 +26,18 @@
                     {{ name }} : {{ result[index] }} votos.
                 </li>
             </ul>
-
         </div>
         <div v-else-if="id === null">
             <h2>Identificação</h2>
             <input placeholder="Voter id" v-model="input_id">
             <button @click="validateId()">Continuar</button>
         </div>
-        <div v-else>
+        <div v-else-if="message !== null">
+            <span>{{ message }}</span>
+        </div>
+        <div v-else class="vote-box">
+            <span>Quem é o melhor professor?</span>
+
             <ul>
                 <li v-for="(name, index) in candidates" :key="index">
                     {{ name }}

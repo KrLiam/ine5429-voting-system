@@ -111,6 +111,7 @@ async function main() {
                 key: {},
                 end_time: 0,
                 remaining_time: 0,
+                message: null,
                 result: null,
 
                 id: null,
@@ -121,29 +122,30 @@ async function main() {
             let app = this;
 
             // carrega dados da api
-            this.candidates = await get_candidates();
-            this.key = await get_key();
-            this.end_time = await get_end_time();
-            await result_poller();
+            let candidates = get_candidates();
+            let key = get_key();
+            let end_time = get_end_time();
+            this.candidates = await candidates;
+            this.key = await key;
+            this.end_time = await end_time;
 
             this.loading = false;
 
             // atualizar timer
-            function update_timer() {
+            async function update_timer() {
                 app.remaining_time = Math.max(0, app.end_time - Date.now() / 1000);
+
+                if (app.remaining_time <= 0) {
+                    let r = await get_result();
+                    if (r.ok) {
+                        app.result = r.result;
+                        return;
+                    }
+                }
+
                 setTimeout(update_timer, 100);
             }
             update_timer()
-
-            // poller do resultado
-            async function result_poller() {
-                let r = await get_result();
-                if (r.ok) {
-                    app.result = r.result;
-                    return;
-                }
-                setTimeout(result_poller, 1000);
-            }
         },
         computed: {
             formatted_remaining_time() {
@@ -172,6 +174,8 @@ async function main() {
                 console.log("Sending encrypted vote [", vote.toString(), "]");
                 let response = await send_vote(this.id, vote);
                 console.log(response.message);
+
+                this.message = response.message;
             },
         }
     }).mount("#app");

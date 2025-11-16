@@ -4,3 +4,7 @@
     flex-direction: column;
     align-items: center;
 }
+
+.vote-box {
+    padding-top: 1em;
+}
