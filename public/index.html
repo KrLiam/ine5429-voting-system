@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>Voting System</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <h1>Sistema de Votação</h1>
+
+        <div>
+            <span>Tempo restante: </span>
+            <span>{{formatted_remaining_time}}</span>
+        </div>
+    
+        <div v-if="loading">
+            <h2>Loading…</h2>
+        </div>
+        <div v-else-if="result !== null">
+            <h2>Resultado</h2>
+
+            <ul>
+                <li v-for="(name, index) in candidates" :key="index">
+                    {{ name }} : {{ result[index] }} votos.
+                </li>
+            </ul>
+
+        </div>
+        <div v-else-if="id === null">
+            <h2>Identificação</h2>
+            <input placeholder="Voter id" v-model="input_id">
+            <button @click="validateId()">Continuar</button>
+        </div>
+        <div v-else>
+            <ul>
+                <li v-for="(name, index) in candidates" :key="index">
+                    {{ name }}
+                    <button @click="vote(index)">Vote</button>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- IMPORTANT: must use type="module" -->
+    <script type="module" src="main.js"></script>
+</body>
+</html>
