@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8" />
     <title>Voting System</title>
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div id="app">
         <h1>Sistema de Votação</h1>
 
-        <div v-if="result === null">
+        <div v-if="end_time !== 0 && result === null">
             <span>Tempo restante: </span>
             <span>{{formatted_remaining_time}}</span>
         </div>
@@ -21,9 +21,16 @@
         <div v-else-if="result !== null">
             <h2>Resultado</h2>
 
-            <ul>
-                <li v-for="(name, index) in candidates" :key="index">
-                    {{ name }} : {{ result[index] }} votos.
+            <ul class="candidates">
+                <li v-for="(item, index) in sorted_candidates" :key="index">
+                    <span>
+                        <span class="ranking">{{ index + 1 }}.</span>
+                        {{ item.candidate }}
+                    </span>
+                    <span class="vote-count">
+                        {{ item.count }}
+                        <span v-if="item.count !== 1">votos</span><span v-else>voto</span>
+                    </span>
                 </li>
             </ul>
         </div>

@@ -31,7 +31,11 @@ async function send_vote(token, value) {
 
 async function get_result() {
     let r = await fetch("/result");
-    return await r.json();
+    let data = await r.json();
+    return {
+        ok: data.ok,
+        result: data.result,
+    }
 }
 
 
@@ -113,11 +117,14 @@ async function main() {
             let app = this;
 
             // carrega dados da api
-            let data = await get_election();
+            let [data, result] = await Promise.all([get_election(), get_result()]);
             this.candidates = data.candidates;
             this.key = data.key;
             this.end_time = data.end_time;
             this.about = data.about;
+            if (result.ok) {
+                this.result = result.result;
+            }
 
             this.loading = false;
 
@@ -135,12 +142,21 @@ async function main() {
 
                 setTimeout(update_timer, 100);
             }
-            update_timer()
+
+            if (this.result === null) {
+                update_timer()
+            }
         },
         computed: {
             formatted_remaining_time() {
                 return formatTime(this.remaining_time)
             },
+            sorted_candidates() {
+                if (this.result === null) return []
+                return this.result
+                    .map((count, index) => ({ candidate: this.candidates[index], count }))
+                    .sort((a,b) => b.count - a.count)
+            }
         },
         methods: {
             async validate_token() {

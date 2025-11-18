@@ -66,6 +66,15 @@ body {
     background: #eeeeee;
 }
 
+.ranking {
+    color: #00004d;
+    font-size: 1.25em;
+    font-weight: 800;
+}
+.vote-count {
+    color: #00004d;
+}
+
 button {
   background-color: #555555;
   border: none;

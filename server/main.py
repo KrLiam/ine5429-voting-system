@@ -38,29 +38,22 @@ class BulletinBoard:
             f.write("\n".join(key for key in self.tokens))
 
 
-@dataclass
-class Contador:
-    candidates: list[str]
+class Authority:
+    public_key: phe.PaillierPublicKey
     private_key: phe.PaillierPrivateKey
+
+    def __init__(self):
+        self.public_key, self.private_key = generate_keys()
+
+    def get_public_key(self) -> phe.PaillierPublicKey:
+        return self.public_key
     
-    def count(self, bb: BulletinBoard) -> list[int]:
-        result = [0] * len(self.candidates)
-
-        if not len(bb.votes):
-            return result
-
-        for i, _ in enumerate(self.candidates):
-            s = bb.votes[0][i]
-            for vote in bb.votes[1:]:
-                s = s + vote[i]
-            
-            result[i] = self.private_key.decrypt(s)
-        
-        return result
+    def reveal(self, result: list[phe.EncryptedNumber]) -> list[int]:
+        return [self.private_key.decrypt(v) for v in result]
 
 
 class Server:
-    private_key: phe.PaillierPrivateKey
+    authority: Authority
     public_key: phe.PaillierPublicKey
     about: str
     start_time: float
@@ -72,16 +65,17 @@ class Server:
 
     def __init__(
             self,
+            authority: Authority,
             candidates: list[str],
             ntokens: int,
+            duration: int = 5,
             about: str = "",
             token_dump_path: str | None = None,
         ):
-        pk, sk = generate_keys()
-        self.public_key = pk
-        self.private_key = sk
+        self.authority = authority
+        self.public_key = authority.get_public_key()
         self.start_time = time.time()
-        self.duration = 60*10 # 1 hora
+        self.duration = 60 * duration # 1 hora
         self.candidates = candidates
         self.about = about
 
@@ -149,6 +143,7 @@ class Server:
                 })
 
             vote = self.convert_vote(values)
+
             self.bb.mark_token(token)
             self.bb.insert_vote(vote)
 
@@ -162,8 +157,19 @@ class Server:
             if not self.over():
                 return jsonify({"ok": False})
             
-            counter = Contador(self.candidates, self.private_key)
-            result = counter.count(self.bb)
+            vote_sum = [0] * len(self.candidates)
+
+            if not len(self.bb.votes):
+                return vote_sum
+
+            for i, _ in enumerate(self.candidates):
+                s = self.bb.votes[0][i]
+                for vote in self.bb.votes[1:]:
+                    s = s + vote[i]
+                vote_sum[i] = s
+
+            result = self.authority.reveal(vote_sum)
+            
             return jsonify({
                 "ok": True,
                 "result": result, 
@@ -174,10 +180,13 @@ class Server:
 
 
 if __name__ == "__main__":
+    authority = Authority()
+
     server = Server(
         authority=authority,
         about="Quem você vota para presidente?",
         candidates=["Jean", "Thais"],
+        duration=30,
         ntokens=43,
         token_dump_path="tokens.txt"
     )
