@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+import secrets
 from typing import Any
 import phe
 import time
@@ -11,18 +12,30 @@ def generate_keys():
 
 Vote = list[phe.EncryptedNumber]
 
-@dataclass
 class BulletinBoard:
-    voters: list[int] = field(default_factory=list)
-    votes: list[Vote] = field(default_factory=list)
+    tokens: dict[str, bool]
+    votes: list[Vote]
 
-    def insert_vote(self, vote: list[phe.EncryptedNumber]):
+    def __init__(self, ntokens: int) -> None:
+        self.tokens = {}
+        self.votes = []
+
+        # generate tokens
+        for _ in range(ntokens):
+            self.tokens[secrets.token_hex(32)] = False
+
+    def insert_vote(self, vote: Vote):
         i = 0 # isso deve ser gerado aleatoriamente
         self.votes.insert(i, vote)
 
-    def insert_voter(self, vote: int):
-        i = 0 # isso deve ser gerado aleatoriamente
-        self.voters.insert(i, vote)
+    def mark_token(self, token: str):
+        if token not in self.tokens:
+            return
+        self.tokens[token] = True
+    
+    def dump_tokens(self, path: str):
+        with open(path, "wt") as f:
+            f.write("\n".join(key for key in self.tokens))
 
 
 @dataclass
@@ -49,21 +62,33 @@ class Contador:
 class Server:
     private_key: phe.PaillierPrivateKey
     public_key: phe.PaillierPublicKey
+    about: str
     start_time: float
     duration: float
     candidates: list[str]
+    tokens: dict[str, bool]
 
     bb: BulletinBoard
 
-    def __init__(self, candidates: list[str]):
+    def __init__(
+            self,
+            candidates: list[str],
+            ntokens: int,
+            about: str = "",
+            token_dump_path: str | None = None,
+        ):
         pk, sk = generate_keys()
         self.public_key = pk
         self.private_key = sk
         self.start_time = time.time()
         self.duration = 60*10 # 1 hora
         self.candidates = candidates
+        self.about = about
 
-        self.bb = BulletinBoard()
+        self.bb = BulletinBoard(ntokens)
+
+        if token_dump_path is not None:
+            self.bb.dump_tokens(token_dump_path)
 
         self.app = Flask(
             __name__,
@@ -77,15 +102,11 @@ class Server:
     def end_time(self) -> float:
         return self.start_time + self.duration
 
-    def validate_id(self, id: str) -> int | None:
-        if not id.isdigit():
-            return None
-        
-        parsed_id = int(id)
-        if parsed_id in self.bb.voters:
-            return None
-        
-        return parsed_id
+    def over(self) -> bool:
+        return time.time() >= self.end_time
+    
+    def validate_token(self, token: str) -> bool:        
+        return token in self.bb.tokens and not self.bb.tokens[token]
     
     def convert_vote(self, value: list[Any]) -> list[phe.EncryptedNumber]:
         result: list[phe.EncryptedNumber] = []
@@ -101,42 +122,34 @@ class Server:
             # serve public/index.html
             return send_from_directory("../public", "index.html")
 
-        @self.app.route("/key")
-        def get_key():
-            return jsonify({"n": str(self.public_key.n), "g": str(self.public_key.g)})
-        
-        @self.app.route("/endtime")
-        def get_endtime():
-            t = self.start_time + self.duration
-            return jsonify({"endtime": t})
-
-        @self.app.route("/candidates")
-        def get_candidates():
-            return jsonify(self.candidates)
-        
-        @self.app.route("/validate-id")
-        def validate_id():
-            voter_id = request.args.get("id")
-            voter_id = self.validate_id(voter_id) if voter_id else None
-            return jsonify({"valid": voter_id is not None})
+        @self.app.route("/election")
+        def get_election():
+            return jsonify({
+                "key": {"n": str(self.public_key.n), "g": str(self.public_key.g)},
+                "end_time": self.end_time,
+                "about": self.about,
+                "candidates": self.candidates,
+            })
+                
+        @self.app.route("/validate-token")
+        def validate_token():
+            token = request.args.get("token") or ""
+            return jsonify({"valid": self.validate_token(token) })
         
         @self.app.route("/vote", methods=["POST"])
         def vote():
             data = request.get_json()
-            id = data.get("id")
+            token = data.get("token")
             values = data.get("value")
 
-            id = self.validate_id(id)
-            if id is None:
+            if not self.validate_token(token):
                 return jsonify({
                     "ok": False,
-                    "message": "Este id é inválido."
+                    "message": "Token inválido."
                 })
 
-            print("received vote of", id, values)
-
             vote = self.convert_vote(values)
-            self.bb.insert_voter(id)
+            self.bb.mark_token(token)
             self.bb.insert_vote(vote)
 
             return jsonify({
@@ -156,16 +169,16 @@ class Server:
                 "result": result, 
             })
 
-    def over(self) -> bool:
-        return time.time() >= self.end_time
-
     def run(self, host="0.0.0.0", port=5000):
         self.app.run(host=host, port=port)
 
 
 if __name__ == "__main__":
-    server = Server(candidates=[
-        "Jean",
-        "Thais"
-    ])
+    server = Server(
+        authority=authority,
+        about="Quem você vota para presidente?",
+        candidates=["Jean", "Thais"],
+        ntokens=43,
+        token_dump_path="tokens.txt"
+    )
     server.run()

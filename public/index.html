@@ -10,7 +10,7 @@
     <div id="app">
         <h1>Sistema de Votação</h1>
 
-        <div>
+        <div v-if="result === null">
             <span>Tempo restante: </span>
             <span>{{formatted_remaining_time}}</span>
         </div>
@@ -27,21 +27,28 @@
                 </li>
             </ul>
         </div>
-        <div v-else-if="id === null">
+        <div v-else-if="token === null" class="token-box">
             <h2>Identificação</h2>
-            <input placeholder="Voter id" v-model="input_id">
-            <button @click="validateId()">Continuar</button>
+
+            <div class="token-form">
+                <input placeholder="Insira o seu token aqui" v-model="input_token">
+                <button @click="validate_token()">Continuar</button>
+            </div>
+
+            <span v-if="message_token_validation !== null" class="text-red">{{ message_token_validation }}</span>
         </div>
-        <div v-else-if="message !== null">
+        <div v-else-if="message !== null" class="box">
             <span>{{ message }}</span>
         </div>
-        <div v-else class="vote-box">
+        <div v-else class="box">
+            <h2>Voto</h2>
+
             <span>Quem é o melhor professor?</span>
 
-            <ul>
+            <ul class="candidates">
                 <li v-for="(name, index) in candidates" :key="index">
                     {{ name }}
-                    <button @click="vote(index)">Vote</button>
+                    <button @click="vote(index)">Votar</button>
                 </li>
             </ul>
         </div>

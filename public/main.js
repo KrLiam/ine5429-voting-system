@@ -1,42 +1,30 @@
 
-async function get_key() {
-    let r = await fetch("/key");
-    let json = await r.json();
-    
-    let n = BigInt(json.n)
-    let g = BigInt(json.g)
-    
-    return {n, g}
+async function get_election() {
+    let r = await fetch("/election");
+    let data = await r.json();
+
+    return {
+        key: { n: BigInt(data.key.n), g: BigInt(data.key.g) },
+        end_time: data.end_time,
+        about: data.about,
+        candidates: data.candidates,
+    }
 }
 
-async function get_candidates() {
-    let r = await fetch("/candidates");
-    let json = await r.json();
-
-    return [...json]
-}
-
-async function get_end_time() {
-    let r = await fetch("/endtime");
-    let json = await r.json();
-
-    return json.endtime;
-}
-
-async function validate_id(id) {
-    let r = await fetch(`/validate-id?id=${encodeURIComponent(id)}`);
+async function validate_token(token) {
+    let r = await fetch(`/validate-token?token=${encodeURIComponent(token)}`);
     let data = await r.json();
 
     return data.valid ?? false
 }
 
-async function send_vote(id, value) {
+async function send_vote(token, value) {
     let r = await fetch("/vote", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
         },
-        body: JSON.stringify({ id, value}),
+        body: JSON.stringify({ token, value}),
     })
     return await r.json()
 }
@@ -58,7 +46,6 @@ function get_random_r() {
 
     return r
 }
-
 
 function powmod(x, n, M) {
     let res = 1n;
@@ -107,27 +94,30 @@ async function main() {
         data() {
             return {
                 loading: true,
-                candidates: [],
                 key: {},
                 end_time: 0,
+                about: "",
+                candidates: [],
+
                 remaining_time: 0,
-                message: null,
                 result: null,
 
-                id: null,
-                input_id: "",
+                message: null,
+                message_token_validation: null,
+
+                token: null,
+                input_token: "",
             };
         },
         async mounted() {
             let app = this;
 
             // carrega dados da api
-            let candidates = get_candidates();
-            let key = get_key();
-            let end_time = get_end_time();
-            this.candidates = await candidates;
-            this.key = await key;
-            this.end_time = await end_time;
+            let data = await get_election();
+            this.candidates = data.candidates;
+            this.key = data.key;
+            this.end_time = data.end_time;
+            this.about = data.about;
 
             this.loading = false;
 
@@ -149,15 +139,19 @@ async function main() {
         },
         computed: {
             formatted_remaining_time() {
-                
                 return formatTime(this.remaining_time)
             },
         },
         methods: {
-            async validateId() {
-                let valid = await validate_id(this.input_id);
+            async validate_token() {
+                this.message_token_validation = null;
+                let valid = await validate_token(this.input_token);
+
                 if (valid) {
-                    this.id = this.input_id;
+                    this.token = this.input_token;
+                }
+                else {
+                    this.message_token_validation = "Token inválido."
                 }
             },
             async vote(index) {
@@ -172,7 +166,7 @@ async function main() {
                 }
 
                 console.log("Sending encrypted vote [", vote.toString(), "]");
-                let response = await send_vote(this.id, vote);
+                let response = await send_vote(this.token, vote);
                 console.log(response.message);
 
                 this.message = response.message;
