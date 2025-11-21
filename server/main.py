@@ -132,6 +132,12 @@ class Server:
         
         @self.app.route("/vote", methods=["POST"])
         def vote():
+            if self.over():
+                return jsonify({
+                    "ok": False,
+                    "message": "Eleição encerrada."
+                })
+        
             data = request.get_json()
             token = data.get("token")
             values = data.get("value")
