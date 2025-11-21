@@ -21,6 +21,8 @@
         <div v-else-if="result !== null">
             <h2>Resultado</h2>
 
+            <span>{{about}}</span>
+
             <ul class="candidates">
                 <li v-for="(item, index) in sorted_candidates" :key="index">
                     <span>
