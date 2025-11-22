@@ -175,15 +175,11 @@ async function main() {
                 let vote = Array.from(new Array(c), () => BigInt(0));
                 vote[index] = BigInt(1);
 
-                console.log("Your vote is [" + vote.toString() + "]");
-
                 for (let i = 0; i < vote.length; i++) {
                     vote[i] = encrypt(vote[i], this.key).toString(10);
                 }
 
-                console.log("Sending encrypted vote [", vote.toString(), "]");
                 let response = await send_vote(this.token, vote);
-                console.log(response.message);
 
                 this.message = response.message;
             },
