@@ -20,7 +20,7 @@ def load_email_credentials(env_path: str = ".env") -> tuple[str, str]:
 
 URL = "http://localhost:3000"
 MESSAGE = "\n".join((
-    "Olá! Eu sou aluno da disciplina de Segurança em Computação (INE5429) do semestre 2025.2. O meu trabalho em grupo consiste em " +
+    "Olá! Somos alunos da disciplina de Segurança em Computação (INE5429) do semestre 2025.2. O nosso trabalho em grupo consiste em " +
     "um sistema de votação utilizando criptografia homomórfica. Por isto, estamos conduzindo uma eleição para testar o nosso sistema " +
     "e você foi convidado para ser um eleitor.",
     "Para isso, basta você acessar o web site abaixo e inserir o token de votação (a string hexadecimal) para realizar o seu voto. " +

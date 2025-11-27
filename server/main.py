@@ -6,6 +6,7 @@ import phe
 import time
 from random import SystemRandom
 from flask import Flask, json, request, send_from_directory, jsonify
+from waitress import serve
 
 
 BULLETIN_BOARD_PATH = "data/bulletin_board.json"
@@ -269,7 +270,7 @@ class Server:
             })
 
     def run(self, host="0.0.0.0", port=5000):
-        self.app.run(host=host, port=port)
+        serve(self.app, host=host, port=port)
 
 
 def seconds_until(target_str: str) -> int:
@@ -298,5 +299,5 @@ if __name__ == "__main__":
         duration=seconds_until("2025-11-28 00:00"),
         ntokens=43,
         token_dump_path="data/tokens.txt"
-    )
+        )
     server.run()
