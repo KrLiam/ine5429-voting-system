@@ -1,4 +1,5 @@
 from pathlib import Path
+from datetime import datetime
 import secrets
 from typing import Any
 import phe
@@ -172,7 +173,6 @@ class Server:
         self.candidates = candidates
         self.about = about
 
-        duration = 60 * duration # 1 hora
         self.bb = BulletinBoard.load_or_default(
             BULLETIN_BOARD_PATH,
             self.public_key,
@@ -272,9 +272,22 @@ class Server:
         self.app.run(host=host, port=port)
 
 
+def seconds_until(target_str: str) -> int:
+    """
+    Retorna o número de segundos até uma data no formato YYYY-MM-DD HH-MM
+    """
+    # Parse the custom format
+    target = datetime.strptime(target_str, "%Y-%m-%d %H:%M")
+    now = datetime.now()
+
+    # Compute difference
+    diff = target - now
+    return int(diff.total_seconds())
+
+
 if __name__ == "__main__":
-    Path("data").mkdir()
-    
+    Path("data").mkdir(exist_ok=True)
+
     authority = Authority.load_or_default(AUTHORITY_PATH)
     authority.save(AUTHORITY_PATH)
 
@@ -282,7 +295,7 @@ if __name__ == "__main__":
         authority=authority,
         about="Quem você vota para presidente?",
         candidates=["Jean", "Thais"],
-        duration=30,
+        duration=seconds_until("2025-11-28 00:00"),
         ntokens=43,
         token_dump_path="data/tokens.txt"
     )
