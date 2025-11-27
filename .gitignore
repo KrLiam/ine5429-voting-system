@@ -1,2 +1,4 @@
 .venv/
 tokens.txt
+authority.json
+bulletin_board.json
