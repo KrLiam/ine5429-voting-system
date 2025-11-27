@@ -18,7 +18,7 @@ def load_email_credentials(env_path: str = ".env") -> tuple[str, str]:
 
     return email, password
 
-URL = "http://localhost:3000"
+URL = "https://9rsxq6fr-5000.brs.devtunnels.ms/"
 MESSAGE = "\n".join((
     "Olá! Somos alunos da disciplina de Segurança em Computação (INE5429) do semestre 2025.2. O nosso trabalho em grupo consiste em " +
     "um sistema de votação utilizando criptografia homomórfica. Por isto, estamos conduzindo uma eleição para testar o nosso sistema " +
@@ -69,12 +69,13 @@ def send_bulk_email(
 
 
 def load_tokens() -> list[str]:
-    with open("tokens.txt", "rt") as f:
+    with open("data/tokens.txt", "rt") as f:
         return f.readlines()
 
 def load_recipients() -> list[str]:
     with open("voter_emails.txt", "rt") as f:
-        return f.readlines()
+        lines = f.readlines()
+        return [line for line in lines if not line.startswith("#")]
 
 
 def main():

@@ -202,6 +202,7 @@ class Server:
         @self.app.route("/")
         def serve_index():
             # serve public/index.html
+            print(f"{datetime.now().strftime('%H:%M:%S')} Página acessada")
             return send_from_directory("../public", "index.html")
 
         @self.app.route("/election")
@@ -231,6 +232,7 @@ class Server:
             values = data.get("value")
 
             if not self.validate_token(token):
+                print(f"{datetime.now().strftime('%H:%M:%S')} Voto com token inválido.")
                 return jsonify({
                     "ok": False,
                     "message": "Token inválido."
@@ -241,6 +243,7 @@ class Server:
             self.bb.mark_token(token)
             self.bb.insert_vote(vote)
 
+            print(f"{datetime.now().strftime('%H:%M:%S')} Voto registrado.")
             return jsonify({
                 "ok": True,
                 "message": "Voto registrado."
