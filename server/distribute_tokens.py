@@ -19,19 +19,25 @@ def load_email_credentials(env_path: str = ".env") -> tuple[str, str]:
     return email, password
 
 URL = "https://9rsxq6fr-5000.brs.devtunnels.ms/"
+SUBJECT = "INE5429 - Participe da eleição para presidente do Grupo 2"
 MESSAGE = "\n".join((
     "Olá! Somos alunos da disciplina de Segurança em Computação (INE5429) do semestre 2025.2. O nosso trabalho em grupo consiste em " +
     "um sistema de votação utilizando criptografia homomórfica. Por isto, estamos conduzindo uma eleição para testar o nosso sistema " +
     "e você foi convidado para ser um eleitor.",
+    "",
     "Para isso, basta você acessar o web site abaixo e inserir o token de votação (a string hexadecimal) para realizar o seu voto. " +
-    "O período de votação encerrará hoje às 23:59 e o resultado final estará disponível na página.",
-    ""
+    "Atenção ao período de votação é curto e encerra hoje (27/11/2025) às 23:59. O resultado final estará disponível na página após o término da eleição.",
+    "",
     f"Link da página: {URL}",
     "",
     "Token:",
     "{}",
     "",
-    "Agradecemos a atenção!"
+    "",
+    "Agradecemos a atenção!",
+    "Atenciosamente,",
+    "William Kraus e Tiago Siqueira.",
+    ""
 ))
 
 def send_bulk_email(
@@ -83,13 +89,11 @@ def main():
     recipients = load_recipients()
     tokens = load_tokens()
 
-    subject = "INE5429 - Eleição do Grupo 2"
-
     send_bulk_email(
         sender_email=email,
         sender_password=password,
         recipients=recipients,
-        subject=subject,
+        subject=SUBJECT,
         body=MESSAGE,
         tokens=tokens,
     )
