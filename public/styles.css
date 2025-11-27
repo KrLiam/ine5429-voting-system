@@ -1,5 +1,6 @@
 * {
     font-family: Arial, Helvetica, sans-serif;
+    box-sizing: border-box;
 }
 
 body {
@@ -26,7 +27,7 @@ body {
     display: flex;
     flex-direction: column;
     width: 100%;
-    max-width: 80%;
+    max-width: 25em;
 }
 
 .box {
