@@ -300,7 +300,7 @@ if __name__ == "__main__":
         about="Quem você vota para presidente?",
         candidates=["Jean", "Thais"],
         duration=seconds_until("2025-11-28 00:00"),
-        ntokens=43,
+        ntokens=50,
         token_dump_path="data/tokens.txt"
         )
     server.run()
