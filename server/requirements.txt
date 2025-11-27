@@ -1,2 +1,3 @@
 phe==1.5.0
 flask==3
+python-dotenv

@@ -1,4 +1,6 @@
 .venv/
+.env
 tokens.txt
 authority.json
 bulletin_board.json
+voter_emails.txt

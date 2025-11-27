@@ -273,6 +273,8 @@ class Server:
 
 
 if __name__ == "__main__":
+    Path("data").mkdir()
+    
     authority = Authority.load_or_default(AUTHORITY_PATH)
     authority.save(AUTHORITY_PATH)
 
@@ -282,6 +284,6 @@ if __name__ == "__main__":
         candidates=["Jean", "Thais"],
         duration=30,
         ntokens=43,
-        token_dump_path="tokens.txt"
+        token_dump_path="data/tokens.txt"
     )
     server.run()
