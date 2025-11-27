@@ -1,4 +1,7 @@
 
+////
+// API
+
 async function get_election() {
     let r = await fetch("/election");
     let data = await r.json();
@@ -39,10 +42,18 @@ async function get_result() {
 }
 
 
+////
+// Cifragem
+
+/**
+ * Gera um inteiro pseudo-aleatório.
+ */
 function get_random_r() {
+    // Gera um array de 32 inteiros de 64 bits
     let arr = new BigUint64Array(32);
     crypto.getRandomValues(arr);
 
+    // Une-se os 32 inteiros para produzir um único inteiro de 2048 bits
     let r = BigInt(arr[0]);
     for (let i = 1; i < arr.length; i++) {
         r = (r << BigInt(64)) | BigInt(arr[i]);
@@ -51,16 +62,22 @@ function get_random_r() {
     return r
 }
 
-function powmod(x, n, M) {
+/**
+ * Computa x^n mod m
+ * @param {BigInt} x 
+ * @param {BigInt} n 
+ * @param {BigInt} m
+ */
+function powmod(x, n, m) {
     let res = 1n;
 
     while (n >= 1n) {
         if (n % 2n === 1n) {
-            res = (res * x) % M;
+            res = (res * x) % m;
             n -= 1n;
         }
         else {
-            x = (x * x) % M;
+            x = (x * x) % m;
             n /= 2n;
         }
     }
@@ -68,6 +85,13 @@ function powmod(x, n, M) {
     return res;
 }
 
+/**
+ * Cifra um valor utilizando a chave fornecida com o
+ * esquema de Paillier.
+ * 
+ * @param {BigInt} value 
+ * @param {{n: BigInt, g: BigInt}} key 
+ */
 function encrypt(value, key) {
     let n = key.n;
     let g = key.g;
@@ -75,10 +99,15 @@ function encrypt(value, key) {
 
     let r = get_random_r();
 
+    // função de cifragem de Paillier
     let c = ( powmod(g, value, n2) * powmod(r, n, n2) ) % n2;
+
     return c;
 }
 
+
+////
+// Lógica da interface
 
 function formatTime(seconds) {
     const h = Math.floor(seconds / 3600);
@@ -94,6 +123,8 @@ function formatTime(seconds) {
 
 
 async function main() {
+    const { createApp } = Vue;
+
     createApp({
         data() {
             return {
@@ -128,7 +159,8 @@ async function main() {
 
             this.loading = false;
 
-            // atualizar timer
+            // poller que executa a cada 0.1 segundos para atualizar o temporizador
+            // e pedir resultado final quando o temporizador chegar a 0
             async function update_timer() {
                 app.remaining_time = Math.max(0, app.end_time - Date.now() / 1000);
 
@@ -153,6 +185,8 @@ async function main() {
             },
             sorted_candidates() {
                 if (this.result === null) return []
+
+                // ordena os candidatos de acordo com o número de votos
                 return this.result
                     .map((count, index) => ({ candidate: this.candidates[index], count }))
                     .sort((a,b) => b.count - a.count)
@@ -161,6 +195,7 @@ async function main() {
         methods: {
             async validate_token() {
                 this.message_token_validation = null;
+                // envia pedido de validação ao servidor
                 let valid = await validate_token(this.input_token);
 
                 if (valid) {
@@ -171,24 +206,23 @@ async function main() {
                 }
             },
             async vote(index) {
+                // gera vetor do voto
                 let c = this.candidates.length;
                 let vote = Array.from(new Array(c), () => BigInt(0));
                 vote[index] = BigInt(1);
 
+                // cifra voto
                 for (let i = 0; i < vote.length; i++) {
                     vote[i] = encrypt(vote[i], this.key).toString(10);
                 }
 
+                // envia o voto ao servidor
                 let response = await send_vote(this.token, vote);
-
                 this.message = response.message;
             },
         }
     }).mount("#app");
 }
-
-
-const { createApp } = Vue;
 
 main();
 
