@@ -60,17 +60,16 @@ class BulletinBoard:
         path: str,
         public_key: phe.PaillierPublicKey,
         ntokens: int,
-        duration: int,
+        end_time: int,
     ) -> "BulletinBoard":
         if Path(path).exists():
             obj = json.load(open(path, "rt"))
 
             start_time = obj.get("start_time", time.time())
-            duration = obj.get("duration", duration)
 
             return BulletinBoard(
                 start_time=start_time,
-                duration=duration,
+                duration=end_time - start_time,
                 ntokens=len(obj.get("tokens", {})),
                 tokens=obj.get("tokens", {}),
                 votes=[convert_vote(v, public_key) for v in obj.get("votes", [])]
@@ -165,7 +164,7 @@ class Server:
             authority: Authority,
             candidates: list[str],
             ntokens: int,
-            duration: int = 5,
+            end_time: int | None = None,
             about: str = "",
             token_dump_path: str | None = None,
         ):
@@ -174,11 +173,14 @@ class Server:
         self.candidates = candidates
         self.about = about
 
+        if end_time is None:
+            end_time = int(time.time()) + 60*60
+
         self.bb = BulletinBoard.load_or_default(
             BULLETIN_BOARD_PATH,
             self.public_key,
             ntokens,
-            duration,
+            end_time,
         )
 
         if token_dump_path is not None:
@@ -276,17 +278,13 @@ class Server:
         serve(self.app, host=host, port=port)
 
 
-def seconds_until(target_str: str) -> int:
+def get_time(target_str: str) -> int:
     """
     Retorna o número de segundos até uma data no formato YYYY-MM-DD HH-MM
     """
     # Parse the custom format
     target = datetime.strptime(target_str, "%Y-%m-%d %H:%M")
-    now = datetime.now()
-
-    # Compute difference
-    diff = target - now
-    return int(diff.total_seconds())
+    return int(target.timestamp())
 
 
 if __name__ == "__main__":
@@ -299,8 +297,8 @@ if __name__ == "__main__":
         authority=authority,
         about="Quem você vota para presidente?",
         candidates=["Jean", "Thais"],
-        duration=seconds_until("2025-11-28 00:00"),
+        end_time=get_time("2025-11-28 12:00"),
         ntokens=50,
         token_dump_path="data/tokens.txt"
-        )
+    )
     server.run()
